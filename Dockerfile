@@ -1,10 +1,30 @@
+# Этап 1: Сборка
+FROM python:3.11-slim AS builder
+
+WORKDIR /app
+
+# Копируем файл с зависимостями
+COPY app/requirements.txt requirements.txt
+
+# Устанавливаем зависимости в виртуальную среду
+RUN python -m venv /venv && /venv/bin/pip install -r requirements.txt
+
+# Копируем всё приложение
+COPY app/ .
+
+# Этап 2: Финальный образ
 FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY app/requirements.txt requirements.txt
-RUN pip install -r requirements.txt
+# Копируем виртуальную среду из этапа сборки
+COPY --from=builder /venv /venv
 
-COPY app/ app/
+# Копируем приложение из этапа сборки
+COPY --from=builder /app .
 
-CMD ["python", "app/app.py"]
+# Устанавливаем переменную окружения для использования виртуальной среды
+ENV PATH="/venv/bin:$PATH"
+
+# Запускаем приложение
+CMD ["python", "app.py"]
